@@ -6,7 +6,7 @@ test.describe('Gorest API', () => {
   test('creates, reads, updates, and deletes a user', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    test(!apiToken, 'GOREST_API_TOKEN is not configured.');
 
     const api = new GRestUser(request, apiToken);
     const userPayload: GorestUserCreateRequest = {
@@ -45,7 +45,7 @@ test.describe('Gorest API', () => {
   test('creates a user and rejects unauthenticated access', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    test(!apiToken, 'GOREST_API_TOKEN is not configured.');
 
     const api = new GRestUser(request, apiToken);
     const unauthenticatedApi = new GRestUser(request);
