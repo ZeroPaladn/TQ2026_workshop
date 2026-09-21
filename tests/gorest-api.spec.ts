@@ -4,11 +4,24 @@ import { GRestPost } from '../src/api/GRestPost';
 import { GRestUser } from '../src/api/GRestUser';
 import type { GorestUserCreateRequest } from '../src/types/gorest';
 
+// In CI, a missing token means the secret is misconfigured, so fail loudly instead of skipping silently.
+function ensureApiToken(apiToken: string | undefined): void {
+  if (apiToken) {
+    return;
+  }
+
+  if (process.env.CI) {
+    throw new Error('GOREST_API_TOKEN must be set in CI to run GoRest API tests.');
+  }
+
+  test.skip(true, 'GOREST_API_TOKEN is not configured.');
+}
+
 test.describe('Gorest API', () => {
   test('creates, reads, updates, and deletes a user', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    ensureApiToken(apiToken);
 
     const api = new GRestUser(request, apiToken);
     const userPayload: GorestUserCreateRequest = {
@@ -47,7 +60,7 @@ test.describe('Gorest API', () => {
   test('creates a user and rejects unauthenticated access', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    ensureApiToken(apiToken);
 
     const api = new GRestUser(request, apiToken);
     const unauthenticatedApi = new GRestUser(request);
@@ -85,7 +98,7 @@ test.describe('Gorest API', () => {
   test('deleting a post removes its comments', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    ensureApiToken(apiToken);
 
     const userApi = new GRestUser(request, apiToken);
     const postApi = new GRestPost(request, apiToken);
