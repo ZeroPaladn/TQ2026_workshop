@@ -8,11 +8,9 @@ test('has title', async ({ page }) => {
 test('search', async ({ page }) => {
   await page.goto('/');
 
-  const searchInput = page.getByRole('searchbox').or(page.getByPlaceholder(/search/i));
+  const searchInput = page.getByRole('textbox', { name: 'What are you looking for?' });
   await searchInput.fill('bear');
-
-  const searchButton = page.getByRole('button', { name: /search/i });
-  await searchButton.click();
+  await searchInput.press('Enter');
 
   await expect(page.getByText(/no results|no products found|0 results/i)).toBeVisible();
 });
