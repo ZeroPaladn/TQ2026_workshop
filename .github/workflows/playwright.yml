@@ -27,3 +27,46 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+
+  self-heal:
+    # Asks GitHub Copilot coding agent to fix and push a commit when tests fail
+    # on a same-repo PR. One attempt per PR, tracked via the "self-heal-attempted" label.
+    needs: test
+    if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+    - name: Check for prior self-heal attempt
+      id: guard
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels --jq '.labels[].name')
+        if echo "$LABELS" | grep -qx "self-heal-attempted"; then
+          echo "Self-heal already attempted for this PR; skipping."
+          echo "proceed=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Request Copilot fix
+      if: steps.guard.outputs.proceed == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        RUN_ID: ${{ github.run_id }}
+      run: |
+        gh pr comment "$PR_NUMBER" --repo "$REPO" --body "@copilot The **Playwright Tests** job failed on this PR: https://github.com/$REPO/actions/runs/$RUN_ID
+
+        Please investigate the failing test(s) and push a fix as a commit to this branch. Only change test automation code (Page Objects, tests, fixtures, config) to address the root cause of the failure — do not mask failures with retries or arbitrary waits. Follow the conventions in AGENTS.md and .github/copilot-instructions.md.
+
+        This is an automated one-time self-heal request; further failures on this PR will require manual attention."
+
+        gh label create "self-heal-attempted" --repo "$REPO" --color "ededed" --description "Automated self-heal has already been requested for this PR" 2>/dev/null || true
+        gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "self-heal-attempted"
