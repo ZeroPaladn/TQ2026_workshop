@@ -34,7 +34,7 @@ Pull the authoritative versions from [.github/copilot-instructions.md](../copilo
 **Test quality**
 - Uses `test`/`expect` from `@playwright/test`; prefers web-first assertions (`toBeVisible`, `toHaveText`, `toHaveURL`).
 - Tests are independent — no shared mutable state or execution-order dependence.
-- No secrets, tokens, or credentials committed; test data is isolated.
+- No secrets, tokens, or credentials committed; test data is isolated. (The Bearstore test-site login is a shared test account, not a secret, and may appear as plaintext constants in test code.)
 - New durable tests avoid dependence on third-party/live external sites; prefer local fixtures/mocks.
 
 **TypeScript**

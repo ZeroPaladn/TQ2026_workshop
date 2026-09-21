@@ -9,9 +9,9 @@ test('search', async ({ page }) => {
   await page.goto('/');
 
   const searchInput = page.getByRole('textbox', { name: 'What are you looking for?' });
-  await searchInput.fill('bear');
+  await searchInput.fill('zzzznonexistentproductxyz');
   await searchInput.press('Enter');
 
-  await expect(page.getByText(/no results|no products found|0 results/i)).toBeVisible();
+  await expect(page.getByText('Your search did not match any products.')).toBeVisible();
 });
 
