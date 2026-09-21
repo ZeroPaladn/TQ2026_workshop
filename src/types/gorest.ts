@@ -13,3 +13,24 @@ export interface GorestUser extends GorestUserCreateRequest {
 }
 
 export type GorestUserUpdateRequest = Partial<GorestUserCreateRequest>;
+
+export interface GorestPostCreateRequest {
+  title: string;
+  body: string;
+}
+
+export interface GorestPost extends GorestPostCreateRequest {
+  id: number;
+  user_id: number;
+}
+
+export interface GorestCommentCreateRequest {
+  name: string;
+  email: string;
+  body: string;
+}
+
+export interface GorestComment extends GorestCommentCreateRequest {
+  id: number;
+  post_id: number;
+}

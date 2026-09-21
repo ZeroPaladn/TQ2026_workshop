@@ -1,12 +1,27 @@
 import { expect, test } from '@playwright/test';
+import { GRestComment } from '../src/api/GRestComment';
+import { GRestPost } from '../src/api/GRestPost';
 import { GRestUser } from '../src/api/GRestUser';
 import type { GorestUserCreateRequest } from '../src/types/gorest';
+
+// In CI, a missing token means the secret is misconfigured, so fail loudly instead of skipping silently.
+function ensureApiToken(apiToken: string | undefined): void {
+  if (apiToken) {
+    return;
+  }
+
+  if (process.env.CI) {
+    throw new Error('GOREST_API_TOKEN must be set in CI to run GoRest API tests.');
+  }
+
+  test.skip(true, 'GOREST_API_TOKEN is not configured.');
+}
 
 test.describe('Gorest API', () => {
   test('creates, reads, updates, and deletes a user', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    ensureApiToken(apiToken);
 
     const api = new GRestUser(request, apiToken);
     const userPayload: GorestUserCreateRequest = {
@@ -45,7 +60,7 @@ test.describe('Gorest API', () => {
   test('creates a user and rejects unauthenticated access', async ({ request }) => {
     const apiToken = process.env.GOREST_API_TOKEN;
 
-    test.skip(!apiToken, 'GOREST_API_TOKEN is not configured.');
+    ensureApiToken(apiToken);
 
     const api = new GRestUser(request, apiToken);
     const unauthenticatedApi = new GRestUser(request);
@@ -78,5 +93,52 @@ test.describe('Gorest API', () => {
     ).rejects.toThrow(/401/);
 
     await api.deleteUser(created.id);
+  });
+
+  test('deleting a post removes its comments', async ({ request }) => {
+    const apiToken = process.env.GOREST_API_TOKEN;
+
+    ensureApiToken(apiToken);
+
+    const userApi = new GRestUser(request, apiToken);
+    const postApi = new GRestPost(request, apiToken);
+    const commentApi = new GRestComment(request, apiToken);
+
+    const firstUser = await userApi.createUser({
+      name: 'QA Workshop Post Author',
+      email: `qa-workshop-post-author-${Date.now()}@example.com`,
+      gender: 'male',
+      status: 'active',
+    });
+
+    const secondUser = await userApi.createUser({
+      name: 'QA Workshop Comment Author',
+      email: `qa-workshop-comment-author-${Date.now()}@example.com`,
+      gender: 'female',
+      status: 'active',
+    });
+
+    const post = await postApi.createPost(firstUser.id, {
+      title: 'QA Workshop Post',
+      body: 'This post will be deleted along with its comments.',
+    });
+
+    expect(post.user_id).toBe(firstUser.id);
+
+    const comment = await commentApi.createComment(post.id, {
+      name: secondUser.name,
+      email: secondUser.email,
+      body: 'This comment should disappear once the post is deleted.',
+    });
+
+    expect(comment.post_id).toBe(post.id);
+
+    await postApi.deletePost(post.id);
+
+    await expect(commentApi.getComment(comment.id)).rejects.toThrow(/404/);
+    await expect(commentApi.getComments(post.id)).resolves.toEqual([]);
+
+    await userApi.deleteUser(firstUser.id);
+    await userApi.deleteUser(secondUser.id);
   });
 });
