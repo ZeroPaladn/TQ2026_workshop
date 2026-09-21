@@ -58,7 +58,10 @@
 
 ## Security and Tooling
 
-- Never commit credentials, tokens, private keys, or environment-specific secrets.
+- Never commit credentials, tokens, private keys, or environment-specific secrets. The
+  Bearstore test-site login (`BEARSTORE_USERNAME`/`BEARSTORE_PASSWORD`) is a shared
+  test account, not a secret, and may live as plaintext constants in test code rather
+  than `.env`.
 - Treat new MCP servers, tools, and network access as explicit project-scope changes;
   document why they are needed and keep permissions minimal.
 - Validate and constrain external input in tests and supporting scripts.

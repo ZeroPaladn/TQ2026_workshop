@@ -23,6 +23,7 @@ These rules apply to all test automation code in this repository.
 - Use stable CSS selectors only when a suitable Playwright locator is not available.
 - Do not use brittle selectors based on generated CSS classes, DOM position, implementation details, or arbitrary chained traversal.
 - Do not use `waitForTimeout` to synchronize tests. Rely on Playwright's auto-waiting and web-first assertions.
+- Always use the Playwright MCP server tools to fetch locators. 
 
 ## Page Object Model
 
@@ -39,5 +40,5 @@ These rules apply to all test automation code in this repository.
 - Use `test` and `expect` from `@playwright/test`.
 - Prefer web-first assertions such as `toBeVisible`, `toHaveText`, and `toHaveURL`.
 - Avoid tests that depend on execution order or shared mutable state.
-- Keep test data isolated and do not commit credentials, tokens, or other secrets.
+- Keep test data isolated and do not commit credentials, tokens, or other secrets. The Bearstore test-site login (`BEARSTORE_USERNAME`/`BEARSTORE_PASSWORD`) is a shared test account, not a secret, and may be stored as plaintext constants in test code instead of `.env`.
 - When changing automation behavior, update or add focused tests and preserve the existing project conventions.
